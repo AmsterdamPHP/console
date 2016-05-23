@@ -103,7 +103,7 @@ class CreateJoindInCommand extends Command
 
         $this->sendSlackMsg(
             sprintf(
-                'Joind.in event created successfully, its awaiting approval. Find it here: https://joind.in/search/q:%s',
+                'Joind.in event created successfully, its awaiting approval. Find it here: https://joind.in/search?keyword=%s',
                 urlencode($event['name'])
             )
         );
