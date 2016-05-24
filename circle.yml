@@ -1,0 +1,14 @@
+machine:
+    php:
+        version: 7.0.2
+
+dependencies:
+    override:
+        - composer install --dev --no-progress --no-interaction --prefer-dist
+
+deployment:
+    production:
+        branch: master
+        owner: amsterdamphp
+        commands:
+            - ./vendor/bin/dep deploy
