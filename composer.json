@@ -11,11 +11,12 @@
 
     "autoload": {
         "psr-4": {
-            "AmsterdamPHP\\Console\\": ["src/", "tests/"]
+            "AmsterdamPHP\\Console\\": ["src/", "tests/"],
+            "Deployer\\": "vendor/deployer/deployer/"
         }
     },
     "require-dev": {
-        "deployer/deployer": "^3.3",
+        "deployer/deployer": "^4@dev",
         "phpunit/phpunit": "^5.3",
         "mockery/mockery": "^0.9.5"
     }

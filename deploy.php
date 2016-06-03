@@ -1,8 +1,5 @@
 <?php
-/*
- * This file has been generated automatically.
- * Please change the configuration for correct use deploy.
- */
+namespace Deployer;
 
 require 'recipe/composer.php';
 

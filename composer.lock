@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "4fc0ce3a785df57736367a365b163b5b",
-    "content-hash": "fc905776bc630419cc51fa88dc6c0349",
+    "hash": "87b932fa9d0a34381e948dba5033626b",
+    "content-hash": "00530bc73b089f15aa2a094709b38794",
     "packages": [
         {
             "name": "codeliner/array-reader",
@@ -1190,16 +1190,16 @@
     "packages-dev": [
         {
             "name": "deployer/deployer",
-            "version": "v3.3.0",
+            "version": "4.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/deployphp/deployer.git",
-                "reference": "0b40e8b7c7eeaa506ed2d0be72e34fd6b71f85ff"
+                "reference": "aa0a10992c8fc2e2b34ab6adff734f1f598c0ba7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/deployphp/deployer/zipball/0b40e8b7c7eeaa506ed2d0be72e34fd6b71f85ff",
-                "reference": "0b40e8b7c7eeaa506ed2d0be72e34fd6b71f85ff",
+                "url": "https://api.github.com/repos/deployphp/deployer/zipball/aa0a10992c8fc2e2b34ab6adff734f1f598c0ba7",
+                "reference": "aa0a10992c8fc2e2b34ab6adff734f1f598c0ba7",
                 "shasum": ""
             },
             "require": {
@@ -1240,7 +1240,7 @@
             ],
             "description": "Deployment Tool",
             "homepage": "http://deployer.org",
-            "time": "2016-05-19 01:47:21"
+            "time": "2016-05-18 06:50:02"
         },
         {
             "name": "deployer/phar-update",
@@ -3840,7 +3840,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "deployer/deployer": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
