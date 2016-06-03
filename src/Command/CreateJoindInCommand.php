@@ -5,7 +5,6 @@ namespace AmsterdamPHP\Console\Command;
 use Codeliner\ArrayReader\ArrayReader;
 use Crummy\Phlack\Phlack;
 use DMS\Service\Meetup\AbstractMeetupClient;
-use GuzzleHttp\Command\Guzzle\GuzzleClient;
 use Joindin\Api\Client;
 use Joindin\Api\Description\Events;
 use Symfony\Component\Console\Command\Command;

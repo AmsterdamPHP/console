@@ -1,0 +1,21 @@
+machine:
+    php:
+        version: 7.0.4
+
+dependencies:
+    override:
+        - composer install --dev --no-progress --no-interaction --prefer-dist
+
+    post:
+        - mkdir -p $CIRCLE_TEST_REPORTS/phpunit
+
+test:
+    override:
+        - ./vendor/bin/phpunit --log-junit $CIRCLE_TEST_REPORTS/phpunit/junit.xml
+
+deployment:
+    production:
+        branch: master
+        owner: amsterdamphp
+        commands:
+            - ./vendor/bin/dep deploy
