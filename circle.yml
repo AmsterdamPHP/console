@@ -18,4 +18,5 @@ deployment:
         branch: master
         owner: AmsterdamPHP
         commands:
+            - cp ~/.ssh/id_amsterdamphp.nl ~/.ssh/id_rsa
             - ./vendor/bin/dep deploy
