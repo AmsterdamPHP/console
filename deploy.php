@@ -15,8 +15,5 @@ server('production', 'amsterdamphp.nl')
     ->identityFile()
     ->env('deploy_path', '/data/www/console');
 
-// Tasks
-task('cron:sync', function () {})->desc("Sync CRON settings");
-
 after('success', 'cron:sync');
 after('deploy:update_code', 'deploy:shared');
