@@ -46,6 +46,7 @@ jobs:
             - composer-cache
 
       - run: composer install -n -o --no-scripts
+      
       - run: ./vendor/bin/dep deploy
 
 workflows:
