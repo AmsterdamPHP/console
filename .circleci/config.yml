@@ -54,10 +54,12 @@ workflows:
   build-deploy:
     jobs:
       - unit-tests
-      - deploy:
+      - hold:
           type: approval
+      - deploy:
           requires:
             - unit-tests
+            - hold
 #          filters:
 #            branches:
 #              only: master
