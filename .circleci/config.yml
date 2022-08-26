@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: php:7.0-cli-alpine
     steps:
-      - run: sudo composer self-update && sudo composer self-update --1
+      - run: composer self-update && composer self-update --1
       - checkout
       - restore_cache:
           keys:
@@ -36,8 +36,8 @@ jobs:
       - image: php:7.0-cli-alpine
     steps:
       - add_ssh_keys:
-        fingerprints:
-          - "00:49:b0:d3:41:35:99:f2:a7:d1:02:46:02:07:06:09"
+          fingerprints:
+            - "00:49:b0:d3:41:35:99:f2:a7:d1:02:46:02:07:06:09"
       - run: sudo composer self-update && sudo composer self-update --1
       - checkout
       - restore_cache:
