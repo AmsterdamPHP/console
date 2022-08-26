@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: circleci/php:7.0
     steps:
-      - run: composer self-update && composer self-update --1
+      - run: sudo composer self-update && sudo composer self-update --1
       - checkout
       - restore_cache:
           keys:
