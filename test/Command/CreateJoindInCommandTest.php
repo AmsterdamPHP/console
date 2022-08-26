@@ -1,12 +1,17 @@
 <?php
 namespace AmsterdamPHP\Console;
 
+use AmsterdamPHP\Console\Api\JoindInClient;
 use AmsterdamPHP\Console\Command\CreateJoindInCommand;
 use Crummy\Phlack\Builder\MessageBuilder;
 use Crummy\Phlack\Message\Message;
 use Crummy\Phlack\Phlack;
 use DMS\Service\Meetup\AbstractMeetupClient;
 use DMS\Service\Meetup\Response\MultiResultResponse;
+use Guzzle\Http\Message\Header;
+use GuzzleHttp\Message\Response;
+use GuzzleHttp\Adapter\MockAdapter;
+use GuzzleHttp\Event\Emitter;
 use Joindin\Api\Client;
 use Mockery\Mock;
 use Mockery\MockInterface;
@@ -36,6 +41,16 @@ class CreateJoindInCommandTest extends \PHPUnit_Framework_TestCase
      */
     protected $command;
 
+    /**
+     * @var MockAdapter
+     */
+    protected $adapter;
+
+    /**
+     * @var JoindInClient
+     */
+    protected $joindinClient;
+
     protected function setUp()
     {
         parent::setUp();
@@ -43,13 +58,19 @@ class CreateJoindInCommandTest extends \PHPUnit_Framework_TestCase
         $this->slack  = \Mockery::mock(Phlack::class);
         $this->joindinEvents = \Mockery::mock(Client::class);
         $this->joindinEvents->shouldReceive('getService')->andReturnSelf();
+        $this->adapter         = new MockAdapter();
+        $this->joindinClient = new JoindInClient([
+            'adapter' => $this->adapter,
+            'emitter' => new Emitter()
+                                                 ]);
 
-        $this->command = new CreateJoindInCommand($this->meetup, $this->slack, $this->joindinEvents);
+        $this->command = new CreateJoindInCommand($this->meetup, $this->slack, $this->joindinEvents, $this->joindinClient);
     }
 
     public function testCommand()
     {
         $meetupResponse = \Mockery::mock(MultiResultResponse::class)->shouldDeferMissing();
+        $meetupResponse->addHeader('Content-Type', new Header('Content-Type', 'application/json'));
         $meetupResponse->setData([
             [
                 'name' => 'Monthly Meeting',
@@ -61,7 +82,9 @@ class CreateJoindInCommandTest extends \PHPUnit_Framework_TestCase
 
         $this->meetup->shouldReceive('getEvents')->andReturn($meetupResponse)->once();
 
-        $this->joindinEvents->shouldReceive('submit')->once();
+        $this->joindinEvents->shouldReceive('submit')
+                            ->andReturn(['url' => 'http://some.path.to.api/v2.1/events/34'])
+                            ->once();
 
         $this->slack->shouldReceive('getMessageBuilder')->andReturn(new MessageBuilder())->once();
         $this->slack->shouldReceive('send')->with(
@@ -72,6 +95,8 @@ class CreateJoindInCommandTest extends \PHPUnit_Framework_TestCase
                 }
             )
         );
+
+        $this->adapter->setResponse(new Response(200));
 
         $input = new ArrayInput([]);
         $output = new DummyOutput();

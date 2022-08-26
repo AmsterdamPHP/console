@@ -2,6 +2,7 @@
 
 namespace AmsterdamPHP\Console\Command;
 
+use AmsterdamPHP\Console\Api\JoindInClient;
 use Codeliner\ArrayReader\ArrayReader;
 use Crummy\Phlack\Phlack;
 use DMS\Service\Meetup\AbstractMeetupClient;
@@ -10,6 +11,7 @@ use Joindin\Api\Description\Events;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use function var_dump;
 
 class CreateJoindInCommand extends Command
 {
@@ -30,17 +32,24 @@ class CreateJoindInCommand extends Command
     protected $joindinEvents;
 
     /**
+     * @var JoindInClient
+     */
+    private $joindinApi;
+
+    /**
      * CreateJoindInCommand constructor.
      *
      * @param AbstractMeetupClient $meetup
      * @param Phlack               $slack
      * @param Client               $joindin
+     * @param JoindInClient        $joindinApi
      */
-    public function __construct(AbstractMeetupClient $meetup, Phlack $slack, Client $joindin)
+    public function __construct(AbstractMeetupClient $meetup, Phlack $slack, Client $joindin, JoindInClient $joindinApi)
     {
         $this->meetup = $meetup;
         $this->slack = $slack;
         $this->joindinEvents = $joindin->getService(new Events());
+        $this->joindinApi = $joindinApi;
         parent::__construct();
     }
 
@@ -97,8 +106,10 @@ class CreateJoindInCommand extends Command
         ];
 
         $result = $this->joindinEvents->submit($event);
+        $output->writeln(sprintf("<comment>=> Joind.in event created.</comment>"));
 
-        $output->writeln(sprintf("<comment>=> Joind.in event created, awaiting approval</comment>"));
+        $hostResult = $this->joindinApi->addEventHost($this->extractIdFromLocation($result['url']), 'amsterdamphp');
+        $output->writeln("<comment>=> Host Add request returned " . $hostResult->getStatusCode() . "</comment>");
 
         $this->sendSlackMsg(
             sprintf(
@@ -150,5 +161,17 @@ class CreateJoindInCommand extends Command
         return $events->filter(function($event) {
             return strpos($event['name'], 'Monthly Meeting') !== false;
         });
+    }
+
+    protected function extractIdFromLocation($locationUrl)
+    {
+        $matches = [];
+        preg_match(
+            "/events\/([0-9]*)/",
+            $locationUrl,
+            $matches
+        );
+
+        return $matches[1];
     }
 }
