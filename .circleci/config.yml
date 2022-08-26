@@ -1,0 +1,66 @@
+version: 2
+
+jobs:
+  unit-tests:
+    docker:
+      - image: circleci/php:7.0
+    steps:
+      - run: sudo composer self-update && sudo composer self-update --1
+      - checkout
+      - restore_cache:
+          keys:
+            - dependencies-{{ checksum "composer.lock" }}
+            - composer-cache
+
+      - run: composer install -n -o --no-scripts
+      - save_cache:
+          key: dependencies-{{ checksum "composer.lock" }}
+          paths:
+            - vendor
+      - save_cache:
+          key: composer-cache
+          paths:
+            - ~/.composer/cache
+
+      - run: mkdir phpunit
+      - run: ./vendor/bin/phpunit --log-junit phpunit/junit.xml
+      - store_test_results:
+          path: phpunit
+      - store_artifacts:
+          path: phpunit
+
+  deploy:
+    machine:
+      enabled: true
+    docker:
+      - image: circleci/php:7.0
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "00:49:b0:d3:41:35:99:f2:a7:d1:02:46:02:07:06:09"
+      - run: sudo composer self-update && sudo composer self-update --1
+      - checkout
+      - restore_cache:
+          keys:
+            - dependencies-{{ checksum "composer.lock" }}
+            - composer-cache
+
+      - run: composer install -n -o --no-scripts
+      - run: cp ~/.ssh/id_amsterdamphp.nl ~/.ssh/id_rsa
+      - run: ./vendor/bin/dep deploy
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - unit-tests
+      - hold:
+          type: approval
+      - deploy:
+          requires:
+            - unit-tests
+            - hold
+#          filters:
+#            branches:
+#              only: master
+
