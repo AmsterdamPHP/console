@@ -3,7 +3,7 @@ version: 2
 jobs:
   unit-tests:
     docker:
-      - image: php:7.0-cli-alpine
+      - image: circleci/php:7.0
     steps:
       - run: composer self-update && composer self-update --1
       - checkout
@@ -33,7 +33,7 @@ jobs:
     machine:
       enabled: true
     docker:
-      - image: php:7.0-cli-alpine
+      - image: circleci/php:7.0
     steps:
       - add_ssh_keys:
           fingerprints:
