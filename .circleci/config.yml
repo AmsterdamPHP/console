@@ -46,7 +46,6 @@ jobs:
             - composer-cache
 
       - run: composer install -n -o --no-scripts
-      - run: cp ~/.ssh/id_amsterdamphp.nl ~/.ssh/id_rsa
       - run: ./vendor/bin/dep deploy
 
 workflows:
