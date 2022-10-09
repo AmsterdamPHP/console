@@ -1,10 +1,13 @@
 <?php
 
 use AmsterdamPHP\Console\Api\JoindInClient;
-use Crummy\Phlack\Phlack;
+use AmsterdamPHP\Console\Api\MeetupClient;
+use AmsterdamPHP\Console\Api\Middleware\JsonAwareResponse;
+use AmsterdamPHP\Console\Api\SlackWebhookClient;
 use DI\ContainerBuilder;
-use DMS\Service\Meetup\AbstractMeetupClient;
-use Joindin\Api\Client;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use Psr\Http\Message\ResponseInterface;
 
 // Load configuration
 $config = require __DIR__ . '/config.php';
@@ -13,11 +16,11 @@ $config = require __DIR__ . '/config.php';
 $containerBuilder = new ContainerBuilder();
 $container = $containerBuilder->build();
 
+// Define Deps
+
+
 // Define services
-$container->set(Client::class, new Client($config['joindin']));
-$container->set(JoindInClient::class, new JoindInClient($config['joindin']));
-$container->set(AbstractMeetupClient::class, \DMS\Service\Meetup\MeetupKeyAuthClient::factory([
-    'key' => $config['meetup_api_key']
-]));
-$container->set(Phlack::class, Phlack::factory($config['slack_url']));
+$container->set(JoindInClient::class, new JoindInClient($config['joindin']['accessToken'], $config['joindin']['baseUrl']));
+$container->set(MeetupClient::class, new MeetupClient($config['meetup']['apiKey'], $config['meetup']['baseUrl']));
+$container->set(SlackWebhookClient::class, new SlackWebhookClient($config['slack']['webhookUrl']));
 return $container;

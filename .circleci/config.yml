@@ -3,7 +3,7 @@ version: 2
 jobs:
   unit-tests:
     docker:
-      - image: circleci/php:7.0
+      - image: circleci/php:8.1
     steps:
       - run: sudo composer self-update && sudo composer self-update --1
       - checkout
@@ -33,7 +33,7 @@ jobs:
     machine:
       enabled: true
     docker:
-      - image: circleci/php:7.0
+      - image: circleci/php:8.1
     steps:
       - add_ssh_keys:
           fingerprints:

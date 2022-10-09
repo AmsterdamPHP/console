@@ -3,98 +3,60 @@
 namespace AmsterdamPHP\Console\Command;
 
 use AmsterdamPHP\Console\Api\JoindInClient;
+use AmsterdamPHP\Console\Api\MeetupClient;
+use AmsterdamPHP\Console\Api\SlackWebhookClient;
 use Codeliner\ArrayReader\ArrayReader;
-use Crummy\Phlack\Phlack;
-use DMS\Service\Meetup\AbstractMeetupClient;
-use Joindin\Api\Client;
-use Joindin\Api\Description\Events;
+use GuzzleHttp\Exception\GuzzleException;
+use IntlDateFormatter;
+use JsonException;
+use Ramsey\Collection\CollectionInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use function var_dump;
+use function sprintf;
 
 class CreateJoindInCommand extends Command
 {
-
-    /**
-     * @var AbstractMeetupClient
-     */
-    protected $meetup;
-
-    /**
-     * @var Phlack
-     */
-    protected $slack;
-
-    /**
-     * @var Client
-     */
-    protected $joindinEvents;
-
-    /**
-     * @var JoindInClient
-     */
-    private $joindinApi;
-
-    /**
-     * CreateJoindInCommand constructor.
-     *
-     * @param AbstractMeetupClient $meetup
-     * @param Phlack               $slack
-     * @param Client               $joindin
-     * @param JoindInClient        $joindinApi
-     */
-    public function __construct(AbstractMeetupClient $meetup, Phlack $slack, Client $joindin, JoindInClient $joindinApi)
-    {
-        $this->meetup = $meetup;
-        $this->slack = $slack;
-        $this->joindinEvents = $joindin->getService(new Events());
-        $this->joindinApi = $joindinApi;
+    public function __construct(
+        private readonly MeetupClient       $meetup,
+        private readonly SlackWebhookClient $slack,
+        private readonly JoindInClient      $joindinApi
+    ) {
         parent::__construct();
     }
 
-    /**
-     * @see Command
-     */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('monthly:create-placeholder')
             ->setDescription('Creates the monthly meeting event at joind.in');
     }
 
-    /**
-     * @see Command
-     *
-     * @param InputInterface  $input
-     * @param OutputInterface $output
-     *
-     * @return int|null|void
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $meetingCandidates = $this->getCurrentMonthlyMeetingCandidates();
 
         if ($meetingCandidates->count() > 1) {
             $this->sendSlackMsg('Too many monthly meetings found, I was confused, sorry.', 'construction');
             $output->writeln("<error>Too many monthly meetings</error>");
-            return;
+            return 0;
         }
 
-        $meeting = new ArrayReader($meetingCandidates->current());
+        $meeting = new ArrayReader($meetingCandidates->first());
 
         $time = $meeting->integerValue('time') / 1000;
         $date = \DateTime::createFromFormat('U', $time);
 
         $output->writeln(
             sprintf(
-                "<comment>=> Current meeting found: </comment><info>%s</info>",
+                '<comment>=> Current meeting found: </comment><info>%s</info>',
                 $meeting->stringValue('name')
             )
         );
 
+
         $event = [
-            'name'         => sprintf('AmsterdamPHP Monthly Meeting - %s', strftime('%B/%Y', $date->format('U'))),
+            'name'         => sprintf('AmsterdamPHP Monthly Meeting - %s', IntlDateFormatter::formatObject($date, 'MMMM/y')),
             'description'  => 'Every month AmsterdamPHP holds a monthly meeting with a speaker a social event. You can find more info and signup at http://meetup.amsterdamphp.nl',
             'start_date'   => $date->format('Y-m-d'),
             'end_date'     => $date->format('Y-m-d'),
@@ -105,11 +67,11 @@ class CreateJoindInCommand extends Command
             'tags'         => 'php, amsterdam'
         ];
 
-        $result = $this->joindinEvents->submit($event);
-        $output->writeln(sprintf("<comment>=> Joind.in event created.</comment>"));
+        $eventId = $this->joindinApi->submitEvent($event);
+        $output->writeln(sprintf('<comment>=> Joind.in event created: %s</comment>', $eventId));
 
-        $hostResult = $this->joindinApi->addEventHost($this->extractIdFromLocation($result['url']), 'amsterdamphp');
-        $output->writeln("<comment>=> Host Add request returned " . $hostResult->getStatusCode() . "</comment>");
+        $hostResult = $this->joindinApi->addEventHost($eventId, 'amsterdamphp');
+        $output->writeln(sprintf('<comment>=> Host Add request returned %s</comment>', $hostResult->getStatusCode()));
 
         $this->sendSlackMsg(
             sprintf(
@@ -118,60 +80,37 @@ class CreateJoindInCommand extends Command
             )
         );
 
-        $output->writeln("<comment>=> Payload sent to Slack.</comment>");
+        $output->writeln('<comment>=> Payload sent to Slack.</comment>');
+        return 0;
     }
 
     /**
-     * Sends a message to Slack
-     *
-     * @param string $msg
-     * @param string $icon
+     * @throws GuzzleException
+     * @throws JsonException
      */
-    protected function sendSlackMsg($msg, $icon = 'date')
+    protected function sendSlackMsg(string $msg, string $icon = 'date'): void
     {
+        $message = [
+            'channel' => '#monthly-meetings',
+            'text' => $msg,
+            'username' => 'AmsterdamPHP Console: joind.in',
+            'icon_emoji' => $icon,
+        ];
 
-        $builder = $this->slack->getMessageBuilder();
-
-        $builder->setChannel('#monthly-meetings');
-        $builder->setText($msg);
-        $builder->setUsername('AmsterdamPHP Console: joind.in');
-        $builder->setIconEmoji($icon);
-
-        $this->slack->send($builder->create());
+        $this->slack->sendMessage($message);
     }
 
     /**
      * Finds possible candidates for this month's meeting.
      * Should only return one result.
      *
-     * @return \DMS\Service\Meetup\Response\MultiResultResponse
+     * @throws GuzzleException
+     * @throws JsonException
      */
-    protected function getCurrentMonthlyMeetingCandidates()
+    protected function getCurrentMonthlyMeetingCandidates(): CollectionInterface
     {
-        //Get Upcoming events
-        $events = $this->meetup->getEvents(
-            [
-                'group_urlname' => 'amsterdamphp',
-                'status'        => 'upcoming',
-                'text_format'   => 'plain',
-                'time'          => '0m,1m'
-            ]
-        );
-
-        return $events->filter(function($event) {
-            return strpos($event['name'], 'Monthly Meeting') !== false;
+        return $this->meetup->getUpcomingEventsForGroup('amsterdamphp')->filter(function($event) {
+            return str_contains($event['name'], 'Monthly Meeting');
         });
-    }
-
-    protected function extractIdFromLocation($locationUrl)
-    {
-        $matches = [];
-        preg_match(
-            "/events\/([0-9]*)/",
-            $locationUrl,
-            $matches
-        );
-
-        return $matches[1];
     }
 }
