@@ -2,37 +2,73 @@
 
 namespace AmsterdamPHP\Console\Api;
 
+use AmsterdamPHP\Console\Api\Middleware\DefaultStackFactory;
+use AmsterdamPHP\Console\Api\Middleware\JsonAwareResponse;
 use GuzzleHttp\Client;
-use GuzzleHttp\Collection;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
+use JsonException;
 use function json_encode;
-use function var_dump;
+use function preg_match;
+use const JSON_THROW_ON_ERROR;
 
-final class JoindInClient extends Client
+class JoindInClient
 {
-    const DEFAULT_BASE_URL = 'https://api.joind.in/v2.1';
+    private ClientInterface $client;
 
     /**
      * Constructor
      */
-    public function __construct(array $config) {
-        $defaults = array('base_url' => self::DEFAULT_BASE_URL);
-        $required = array('base_url');
-
-        $configuration = Collection::fromConfig($config, $defaults, $required);
-
-        parent::__construct($configuration->toArray());
-
-        if ($configuration->get('access_token')) {
-            $this->setDefaultOption('headers/Authorization', 'OAuth ' . $configuration->get('access_token'));
-        }
-        $this->setDefaultOption('headers/Accept-Charset', 'utf-8');
-        $this->setDefaultOption('headers/Accept', 'application/json');
-        $this->setDefaultOption('headers/Content-Type', 'application/json');
+    public function __construct(string $token, string $baseUrl) {
+        $this->client = new Client([
+            'base_uri' => $baseUrl,
+            'headers' => [
+                'Authorization' => 'OAuth ' . $token,
+                'Accept-Charset' => 'utf-8',
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ],
+            'handler' => DefaultStackFactory::createJsonHandlingStack(),
+        ]);
     }
 
-    public function addEventHost($eventId, $eventHost)
+    /**
+     * @throws GuzzleException
+     * @throws JsonException
+     */
+    public function addEventHost($eventId, $eventHost): JsonAwareResponse
     {
-        $result = $this->post('v2.1/events/'.$eventId.'/hosts', ['body' => json_encode(['host_name' => $eventHost])]);
+        /** @var JsonAwareResponse $result */
+        $result = $this->client->post('v2.1/events/'.$eventId.'/hosts', [
+            'body' => json_encode(['host_name' => $eventHost], JSON_THROW_ON_ERROR)
+        ]);
+
         return $result;
+    }
+
+    /**
+     * @throws GuzzleException
+     * @throws JsonException
+     */
+    public function submitEvent($event): string
+    {
+        /** @var JsonAwareResponse $result */
+        $result = $this->client->post('v2.1/events', [
+            'body' => json_encode($event, JSON_THROW_ON_ERROR)
+        ]);
+
+        return $this->extractIdFromLocation($result->getLocationHeader());
+    }
+
+    private function extractIdFromLocation($locationUrl): string
+    {
+        $matches = [];
+        preg_match(
+            "/events\/(\d*)/",
+            $locationUrl,
+            $matches
+        );
+
+        return $matches[1] ?? '';
     }
 }
