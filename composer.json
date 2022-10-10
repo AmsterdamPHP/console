@@ -18,6 +18,15 @@
         "mockery/mockery": "^1",
         "phpunit/phpunit": "^9",
         "vlucas/phpdotenv": "^5",
-        "deployer/deployer": "^7"
+        "deployer/deployer": "^7",
+        "doctrine/coding-standard": "^10.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "phpcs": "phpcs"
     }
 }

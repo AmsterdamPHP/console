@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Unit\Util;
 
 use AmsterdamPHP\Console\Api\Middleware\DefaultStackFactory;
@@ -9,15 +11,18 @@ use JsonException;
 use Mockery\Adapter\Phpunit\MockeryTestCase;
 use ReflectionClass;
 use ReflectionException;
+
 use function json_encode;
+
+use const JSON_THROW_ON_ERROR;
 
 class GuzzleTestCase extends MockeryTestCase
 {
-    public function overrideClient(ClientInterface $client, $instance): void
+    public function overrideClient(ClientInterface $client, object $instance): void
     {
         try {
             $relectedInstance = new ReflectionClass($instance);
-            $clientProp = $relectedInstance->getProperty('client');
+            $clientProp       = $relectedInstance->getProperty('client');
             $clientProp->setAccessible(true);
             $clientProp->setValue($instance, $client);
         } catch (ReflectionException $e) {
@@ -29,21 +34,26 @@ class GuzzleTestCase extends MockeryTestCase
     {
         try {
             $relectedInstance = new ReflectionClass($instance);
-            $clientProp = $relectedInstance->getProperty('client');
+            $clientProp       = $relectedInstance->getProperty('client');
             $clientProp->setAccessible(true);
+
             return $clientProp->getValue($instance);
         } catch (ReflectionException $e) {
             $this->fail('Could not Reflect the Client: ' . $e->getMessage());
         }
     }
 
+    /**
+     * @param string[] $nonEncodedBody
+     * @param string[] $headers
+     */
     public function getFakeJsonAwareResponse(int $statusCode, array $nonEncodedBody = [], array $headers = []): JsonAwareResponse
     {
         try {
             return new JsonAwareResponse(
                 200,
                 $headers + ['Content-Type' => 'application/json'],
-                json_encode($nonEncodedBody, JSON_THROW_ON_ERROR)
+                json_encode($nonEncodedBody, JSON_THROW_ON_ERROR),
             );
         } catch (JsonException $e) {
             $this->fail('Cound not create Fake Response: ' . $e->getMessage());
@@ -53,9 +63,9 @@ class GuzzleTestCase extends MockeryTestCase
     public function validateStackPresence(object $instance): void
     {
         try {
-            $client           = $this->getInnerClient($instance);
-            $reflectedClient  = new ReflectionClass($client);
-            $configProp       = $reflectedClient->getProperty('config');
+            $client          = $this->getInnerClient($instance);
+            $reflectedClient = new ReflectionClass($client);
+            $configProp      = $reflectedClient->getProperty('config');
             $configProp->setAccessible(true);
             $config = $configProp->getValue($client);
 

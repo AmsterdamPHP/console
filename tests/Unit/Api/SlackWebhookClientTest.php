@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Unit\Api;
 
 use AmsterdamPHP\Console\Api\SlackWebhookClient;
@@ -8,12 +10,13 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use JsonException;
 use Mockery;
+
 use function json_encode;
+
 use const JSON_THROW_ON_ERROR;
 
 class SlackWebhookClientTest extends GuzzleTestCase
 {
-
     private ClientInterface&Mockery\MockInterface $client;
     private SlackWebhookClient $slack;
 

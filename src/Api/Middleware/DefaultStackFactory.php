@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Api\Middleware;
 
 use GuzzleHttp\HandlerStack;
@@ -18,9 +20,10 @@ final class DefaultStackFactory
                     $response->getHeaders(),
                     $response->getBody(),
                     $response->getProtocolVersion(),
-                    $response->getReasonPhrase()
+                    $response->getReasonPhrase(),
                 );
-            }), 'json_decode_middleware');
+            },
+        ), 'json_decode_middleware');
 
         return $stack;
     }

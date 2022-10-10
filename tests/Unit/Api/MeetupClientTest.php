@@ -1,25 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Unit\Api;
 
 use AmsterdamPHP\Console\Api\MeetupClient;
-use AmsterdamPHP\Console\Api\Middleware\JsonAwareResponse;
 use AmsterdamPHP\Console\Unit\Util\GuzzleTestCase;
 use GuzzleHttp\ClientInterface;
 use Mockery;
-use Mockery\Mock;
-use ReflectionException;
-use function json_encode;
 
 class MeetupClientTest extends GuzzleTestCase
 {
-
     private ClientInterface&Mockery\MockInterface $client;
     private MeetupClient $meetup;
 
-    private const KEY = 'some-key';
+    private const KEY     = 'some-key';
     private const BASEURL = 'https://some.path';
-    private const GROUP = 'group';
+    private const GROUP   = 'group';
 
     protected function setUp(): void
     {
@@ -32,9 +29,8 @@ class MeetupClientTest extends GuzzleTestCase
     public function testGetUpcomingEventsForGroup(): void
     {
         $this->client->expects('get')
-            ->withArgs(fn($url, $opts) => $opts['query'][
-                'key'] === [self::KEY]
-                &&$opts['query']['group_urlname'] === self::GROUP)
+            ->withArgs(static fn ($url, $opts) => $opts['query']['key'] === [self::KEY]
+                && $opts['query']['group_urlname'] === self::GROUP)
             ->andReturns($this->getFakeJsonAwareResponse(200, ['results' => []]))
             ->once();
 

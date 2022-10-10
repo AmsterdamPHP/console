@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Api\Middleware;
 
 use GuzzleHttp\Psr7\Response;
 use JsonException;
 use Psr\Http\Message\StreamInterface;
+
 use function array_shift;
 use function json_decode;
-use function var_dump;
+use function str_contains;
+
 use const JSON_THROW_ON_ERROR;
 
 final class JsonAwareResponse extends Response
 {
-    private ?array $cachedJson = null;
+    private array|null $cachedJson = null;
 
-    /**
-     * @throws JsonException
-     */
+    /** @throws JsonException */
     public function getJson(): array|StreamInterface
     {
         if ($this->cachedJson) {
@@ -25,7 +27,7 @@ final class JsonAwareResponse extends Response
 
         $body = $this->getBody();
 
-        if (!str_contains($this->getHeaderLine('Content-Type'), 'application/json')) {
+        if (! str_contains($this->getHeaderLine('Content-Type'), 'application/json')) {
             return $body;
         }
 
@@ -33,13 +35,15 @@ final class JsonAwareResponse extends Response
             return [];
         }
 
-        $this->cachedJson = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        $this->cachedJson = json_decode((string) $body, true, 512, JSON_THROW_ON_ERROR);
+
         return $this->cachedJson;
     }
 
     public function getLocationHeader(): string
     {
         $headerValue = $this->getHeader('Location');
-        return array_shift($headerValue) ?? "";
+
+        return array_shift($headerValue) ?? '';
     }
 }

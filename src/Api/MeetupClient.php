@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Api;
 
 use AmsterdamPHP\Console\Api\Middleware\DefaultStackFactory;
@@ -11,18 +13,18 @@ use JsonException;
 use Ramsey\Collection\Collection;
 use Ramsey\Collection\CollectionInterface;
 
+use function assert;
+
 class MeetupClient
 {
     private ClientInterface $client;
-    private string $meetupKey;
 
-    public function __construct(string $meetupKey, string $baseUrl)
+    public function __construct(private readonly string $meetupKey, string $baseUrl)
     {
-        $this->meetupKey = $meetupKey;
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'handler' => DefaultStackFactory::createJsonHandlingStack(),
-       ]);
+        ]);
     }
 
     /**
@@ -31,7 +33,6 @@ class MeetupClient
      */
     public function getUpcomingEventsForGroup(string $group): CollectionInterface
     {
-        /** @var JsonAwareResponse $result */
         $result = $this->client->get('/2/events', [
             'query' => [
                 'key'           => [$this->meetupKey],
@@ -41,8 +42,8 @@ class MeetupClient
                 'time'          => '0m,1m',
             ],
         ]);
+        assert($result instanceof JsonAwareResponse);
 
         return new Collection('array', $result->getJson()['results']);
     }
-
 }

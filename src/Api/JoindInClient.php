@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AmsterdamPHP\Console\Api;
 
 use AmsterdamPHP\Console\Api\Middleware\DefaultStackFactory;
@@ -8,8 +10,11 @@ use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use JsonException;
+
+use function assert;
 use function json_encode;
 use function preg_match;
+
 use const JSON_THROW_ON_ERROR;
 
 class JoindInClient
@@ -19,7 +24,8 @@ class JoindInClient
     /**
      * Constructor
      */
-    public function __construct(string $token, string $baseUrl) {
+    public function __construct(string $token, string $baseUrl)
+    {
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'headers' => [
@@ -36,37 +42,39 @@ class JoindInClient
      * @throws GuzzleException
      * @throws JsonException
      */
-    public function addEventHost($eventId, $eventHost): JsonAwareResponse
+    public function addEventHost(string $eventId, string $eventHost): JsonAwareResponse
     {
-        /** @var JsonAwareResponse $result */
-        $result = $this->client->post('v2.1/events/'.$eventId.'/hosts', [
-            'body' => json_encode(['host_name' => $eventHost], JSON_THROW_ON_ERROR)
+        $result = $this->client->post('v2.1/events/' . $eventId . '/hosts', [
+            'body' => json_encode(['host_name' => $eventHost], JSON_THROW_ON_ERROR),
         ]);
+        assert($result instanceof JsonAwareResponse);
 
         return $result;
     }
 
     /**
+     * @param string[] $event
+     *
      * @throws GuzzleException
      * @throws JsonException
      */
-    public function submitEvent($event): string
+    public function submitEvent(array $event): string
     {
-        /** @var JsonAwareResponse $result */
         $result = $this->client->post('v2.1/events', [
-            'body' => json_encode($event, JSON_THROW_ON_ERROR)
+            'body' => json_encode($event, JSON_THROW_ON_ERROR),
         ]);
+        assert($result instanceof JsonAwareResponse);
 
         return $this->extractIdFromLocation($result->getLocationHeader());
     }
 
-    private function extractIdFromLocation($locationUrl): string
+    private function extractIdFromLocation(string $locationUrl): string
     {
         $matches = [];
         preg_match(
-            "/events\/(\d*)/",
+            '/events\/(\d*)/',
             $locationUrl,
-            $matches
+            $matches,
         );
 
         return $matches[1] ?? '';
