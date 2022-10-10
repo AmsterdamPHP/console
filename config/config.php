@@ -2,15 +2,20 @@
 
 // Load ENV vars
 if (file_exists(__DIR__ . '/../.env')) {
-    $container['env'] = new \Dotenv\Dotenv(__DIR__.'/../', '.env');
-    $container['env']->load();
+    $container['env'] = Dotenv\Dotenv::createImmutable(__DIR__.'/../', '.env');
+    $container['env']->safeLoad();
 }
 
 return [
-    'slack_url' => getenv('SLACK_URL'),
-    'meetup_api_key' => getenv('MEETUP_API_KEY'),
+    'slack' => [
+        'webhookUrl' => $_ENV['SLACK_URL'],
+    ],
+    'meetup' => [
+        'baseUrl' => $_ENV['MEETUP_API_URL'],
+        'apiKey' => $_ENV['MEETUP_API_KEY'],
+    ],
     'joindin' => [
-        'base_url' => getenv('JOINDIN_URL'),
-        'access_token' => getenv('JOINDIN_TOKEN')
+        'baseUrl' => $_ENV['JOINDIN_URL'],
+        'accessToken' => $_ENV['JOINDIN_TOKEN'],
     ],
 ];
